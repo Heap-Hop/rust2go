@@ -5,30 +5,33 @@ import (
 	"time"
 )
 
-type Demo struct{}
-
-func init() {
-	DemoCallImpl = Demo{}
+type Demo struct {
+	lastUserName string
 }
 
-func (Demo) demo_oneway(req DemoUser) {
+func init() {
+	DemoCallImpl = &Demo{}
+}
+
+func (demo *Demo) demo_oneway(req DemoUser) {
+	demo.lastUserName = req.name
 	fmt.Printf("[Go-oneway] Golang received name: %s, age: %d\n", req.name, req.age)
 }
 
-func (Demo) demo_check(req DemoComplicatedRequest) DemoResponse {
+func (demo *Demo) demo_check(req DemoComplicatedRequest) DemoResponse {
 	fmt.Printf("[Go-call] Golang received req\n")
 	fmt.Printf("[Go-call] Golang returned result\n")
-	return DemoResponse{pass: true}
+	return DemoResponse{pass: true, last_request_user_name: demo.lastUserName}
 }
 
-func (Demo) demo_check_async(req DemoComplicatedRequest) DemoResponse {
+func (demo *Demo) demo_check_async(req DemoComplicatedRequest) DemoResponse {
 	fmt.Printf("[Go-call async] Golang received req, will sleep 1s\n")
 	time.Sleep(1 * time.Second)
 	fmt.Printf("[Go-call async] Golang returned result\n")
 	return DemoResponse{pass: true}
 }
 
-func (Demo) demo_check_async_safe(req DemoComplicatedRequest) DemoResponse {
+func (demo *Demo) demo_check_async_safe(req DemoComplicatedRequest) DemoResponse {
 	fmt.Printf("[Go-call async drop_safe] Golang received req, will sleep 1s\n")
 	time.Sleep(1 * time.Second)
 	resp := DemoResponse{pass: req.balabala[0] == 1}

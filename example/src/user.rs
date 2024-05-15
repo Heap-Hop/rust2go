@@ -19,7 +19,7 @@ pub mod binding {
 }
 
 // Define your own structs. You must derive `rust2go::R2G` for each struct.
-#[derive(rust2go::R2G, Clone)]
+#[derive(rust2go::R2G, Clone, Debug)]
 pub struct DemoUser {
     pub name: String,
     pub age: u8,
@@ -33,9 +33,10 @@ pub struct DemoComplicatedRequest {
 }
 
 // Define your own structs. You must derive `rust2go::R2G` for each struct.
-#[derive(rust2go::R2G, Clone, Copy)]
+#[derive(rust2go::R2G, Clone)]
 pub struct DemoResponse {
     pub pass: bool,
+    pub last_request_user_name: String,
 }
 
 // Define the call trait.

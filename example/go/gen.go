@@ -8,16 +8,6 @@ package main
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct StringRef {
-  const uint8_t *ptr;
-  uintptr_t len;
-} StringRef;
-
-typedef struct DemoUserRef {
-  struct StringRef name;
-  uint8_t age;
-} DemoUserRef;
-
 typedef struct ListRef {
   const void *ptr;
   uintptr_t len;
@@ -28,9 +18,20 @@ typedef struct DemoComplicatedRequestRef {
   struct ListRef balabala;
 } DemoComplicatedRequestRef;
 
+typedef struct StringRef {
+  const uint8_t *ptr;
+  uintptr_t len;
+} StringRef;
+
 typedef struct DemoResponseRef {
   bool pass;
+  struct StringRef last_request_user_name;
 } DemoResponseRef;
+
+typedef struct DemoUserRef {
+  struct StringRef name;
+  uint8_t age;
+} DemoUserRef;
 
 // hack from: https://stackoverflow.com/a/69904977
 __attribute__((weak))
@@ -52,7 +53,6 @@ inline void DemoCall_demo_check_async_safe_cb(const void *f_ptr, struct DemoResp
 */
 import "C"
 import (
-	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -104,26 +104,12 @@ func CDemoCall_demo_check_async_safe(req C.DemoComplicatedRequestRef, slot *C.vo
 	}()
 }
 
-// An alternative impl of unsafe.String for go1.18
-func unsafeString(ptr *byte, length int) string {
-	sliceHeader := &reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(ptr)),
-		Len:  length,
-		Cap:  length,
-	}
-	return *(*string)(unsafe.Pointer(sliceHeader))
-}
-
-// An alternative impl of unsafe.StringData for go1.18
-func unsafeStringData(s string) *byte {
-	return (*byte)(unsafe.Pointer((*reflect.StringHeader)(unsafe.Pointer(&s)).Data))
-}
 func newString(s_ref C.StringRef) string {
-	return unsafeString((*byte)(unsafe.Pointer(s_ref.ptr)), int(s_ref.len))
+	return unsafe.String((*byte)(unsafe.Pointer(s_ref.ptr)), s_ref.len)
 }
 func refString(s *string, _buffer *[]byte) C.StringRef {
 	return C.StringRef{
-		ptr: (*C.uint8_t)(unsafeStringData(*s)),
+		ptr: (*C.uint8_t)(unsafe.StringData(*s)),
 		len: C.uintptr_t(len(*s)),
 	}
 }
@@ -301,12 +287,14 @@ func refDemoComplicatedRequest(p *DemoComplicatedRequest, buffer *[]byte) C.Demo
 }
 
 type DemoResponse struct {
-	pass bool
+	pass                   bool
+	last_request_user_name string
 }
 
 func newDemoResponse(p C.DemoResponseRef) DemoResponse {
 	return DemoResponse{
-		pass: newC_bool(p.pass),
+		pass:                   newC_bool(p.pass),
+		last_request_user_name: newString(p.last_request_user_name),
 	}
 }
 func cntDemoResponse(s *DemoResponse, cnt *uint) [0]C.DemoResponseRef {
@@ -314,7 +302,8 @@ func cntDemoResponse(s *DemoResponse, cnt *uint) [0]C.DemoResponseRef {
 }
 func refDemoResponse(p *DemoResponse, buffer *[]byte) C.DemoResponseRef {
 	return C.DemoResponseRef{
-		pass: refC_bool(&p.pass, buffer),
+		pass:                   refC_bool(&p.pass, buffer),
+		last_request_user_name: refString(&p.last_request_user_name, buffer),
 	}
 }
 func main() {}

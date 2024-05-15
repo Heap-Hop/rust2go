@@ -6,22 +6,34 @@ use user::{DemoCall, DemoCallImpl, DemoComplicatedRequest, DemoUser};
 
 #[monoio::main(timer_enabled = true)]
 async fn main() {
+    println!("========== Start oneway demo ==========");
+    
+    {
+        let user = DemoUser {
+            name: "Ghost".to_string(),
+            age: 42,
+        };
+        println!("[Rust-oneway] request: {:?}", user);
+        DemoCallImpl::demo_oneway(&user);
+        println!("[Rust-oneway] done");
+    }
+
     let user = DemoUser {
         name: "chihai".to_string(),
         age: 28,
     };
-    println!("========== Start oneway demo ==========");
-    DemoCallImpl::demo_oneway(&user);
-    println!("[Rust-oneway] done");
 
     let req = DemoComplicatedRequest {
         users: vec![user.clone(), user],
         balabala: vec![1],
     };
+    let demo_check_res = DemoCallImpl::demo_check(&req);
     println!(
-        "[Rust-sync] User pass: {}",
-        DemoCallImpl::demo_check(&req).pass
+        "[Rust-sync] demo_check pass: {}, last_request_user_name: {}",
+        demo_check_res.pass,
+        demo_check_res.last_request_user_name
     );
+    assert!("Ghost".eq(&demo_check_res.last_request_user_name));
 
     // Simulate calling a async go function twice.
     // In async way, current thread will not be blocked.
